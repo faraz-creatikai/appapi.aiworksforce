@@ -1,0 +1,1482 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model BrandSettings {
+  id              Int    @id @default(1)
+  appName         String @default("EstateAI Agent Platform")
+  shortName       String @default("EstateAI")
+  primaryColor    String @default("#0066cc")
+  themeColor      String @default("#ffffff")
+  backgroundColor String @default("#ffffff")
+
+  // Image URLs (Store the actual images in AWS S3, Cloudinary, or your server's upload folder)
+  faviconUrl      String?
+  logoTextUrl     String? // Logo with domain name text
+  logoIconUrl     String? // Logo without text
+  splashScreenUrl String?
+  icon192Url      String? // For manifest
+  icon512Url      String? // For manifest
+
+  updatedAt DateTime @updatedAt
+}
+
+model Admin {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  password     String
+  role         Role
+  city         String?
+  phone        String?
+  status       AdminStatus @default(active)
+  AddressLine1 String?     @default("")
+  AddressLine2 String?     @default("")
+
+  company        String?
+  clientId       String?
+  campaign       String?
+  experience     String?
+  specialization String?
+  AdminImage     Json?   @default("[]")
+
+  isSuperAdmin Boolean @default(false)
+
+  // Self Relation (creator)
+  createdBy    String?
+  createdByRef Admin?  @relation("CreatedByRelation", fields: [createdBy], references: [id])
+
+  // Self Relation (admins created by this admin)
+  createdAdmins Admin[] @relation("CreatedByRelation")
+
+  assignedCustomers Customer[]           @relation("CustomerAssignedTo")
+  assignedAIAgents  AIAgent[]            @relation("AIAgentAssignedTo")
+  createdCustomers  Customer[]           @relation("CustomerCreatedBy")
+  createdEmployee   Employee[]           @relation("EmployeeCreatedBy")
+  createdFollowups  Followup[]           @relation("FollowupCreatedBy")
+  createdPropertys  Property[]           @relation("PropertyCreatedBy")
+  archivedCustomers CustomerArchive[]    @relation("AdminArchivedCustomers")
+  markedAttendances EmployeeAttendance[] @relation("AdminMarkedAttendance")
+  // Tasks created by this admin
+  createdTasks      Task[]               @relation("AdminCreatedTasks")
+
+  assignedContact Contact[] @relation("ContactAssignedTo")
+
+  recievedNotification Notification[] @relation("NotificationReceiver")
+  sendNotification     Notification[] @relation("NotificationSender")
+
+  assignLogs     CustomerAssignLog[] @relation("AdminAssignLogs")
+  madeAssignLogs CustomerAssignLog[] @relation("AdminMadeAssignLogs")
+
+  activityLogs   ActivityLog[] @relation("AdminActivityLogs")
+  targetedInLogs ActivityLog[] @relation("AdminActivityTargets")
+  sessions       UserSession[] @relation("AdminSessions")
+
+  chatSessions AgentChatSession[] @relation("AdminChatSessions")
+
+  enquiryMessages EnquiryMessage[] @relation("AdminEnquiryMessages")
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  scheduledPosts ScheduledPost[]
+  adminAiApiKeys AdminAiApiKey[]
+  crmApiKeys     CRMApiKey[]
+}
+
+enum Role {
+  administrator
+  client_admin
+  city_admin
+  user
+  agent
+}
+
+enum AdminStatus {
+  active
+  inactive
+}
+
+enum AIProvider {
+  OPENAI
+  GEMINI
+  ANTHROPIC
+  GOOGLE
+  MISTRAL
+  GROQ
+  CUSTOM
+}
+
+model Campaign {
+  id        String    @id @default(uuid())
+  Name      String    @unique
+  Status    Status    @default(Active)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  types     Type[]
+  subTypes  SubType[]
+}
+
+enum Status {
+  Active
+  Inactive
+}
+
+enum NormalStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Type {
+  id     String @id @default(uuid())
+  Name   String @default("")
+  Status Status @default(Active)
+
+  // Relation to Campaign
+  Campaign   Campaign @relation(fields: [campaignId], references: [id])
+  campaignId String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  subTypes  SubType[]
+}
+
+model SubType {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  campaignId String
+  Campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  customerTypeId String
+  CustomerType   Type   @relation(fields: [customerTypeId], references: [id])
+}
+
+model ContactCampaign {
+  id           String        @id @default(uuid())
+  Name         String        @unique
+  Status       Status        @default(Active)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  contactTypes ContactType[]
+}
+
+model ContactType {
+  id        String   @id @default(uuid())
+  Name      String   @default("")
+  Status    Status   @default(Active)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign key: Campaign (Like Mongoose ref)
+  campaignId String
+  Campaign   ContactCampaign @relation(fields: [campaignId], references: [id])
+}
+
+model City {
+  id           String        @id @default(uuid())
+  Name         String
+  Status       String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  locations    Location[]
+  subLocations SubLocation[]
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  Name      String   @default("")
+  Status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to City
+  cityId       String
+  City         City          @relation(fields: [cityId], references: [id])
+  subLocations SubLocation[]
+}
+
+model SubLocation {
+  id        String   @id @default(uuid())
+  Name      String   @default("")
+  Status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to City and Location
+  cityId String
+  City   City   @relation(fields: [cityId], references: [id])
+
+  locationId String
+  Location   Location @relation(fields: [locationId], references: [id])
+}
+
+model Facility {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Amenity {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FunctionalArea {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Industry {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reference {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Price {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LeadType {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomerFields {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Expense {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Income {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StatusType {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactStatusType {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentMethod {
+  id        String   @id @default(uuid())
+  Name      String   @default("")
+  Status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Template {
+  id            String @id @default(uuid())
+  name          String @unique
+  type          String // email | whatsapp
+  subject       String @default("")
+  body          String @db.LongText
+  description   String @default("")
+  whatsappImage Json?  @default("[]")
+  createdBy     String @default("system")
+  status        String @default("Active") // Active | Inactive
+
+  whatsappMediaType   String? @default("image") // image | video | document | none
+  whatsappFileName    String? @default("") // shown as filename when mediaType = document
+  whatsappLinkPreview Json?   @default("null") // { title, body, thumbnailUrl, sourceUrl }
+  whatsappLocation    Json?   @default("null") // { lat, lng, name, address }
+  whatsappPoll        Json?   @default("null") // { name, options: [], selectableCount }
+  variables           Json?   @default("[]") // e.g. ["customerName","amount"] — useful for email too, as a "available merge tags" hint in your UI
+  category            String? @default("") // free-text grouping, e.g. "marketing" / "reminder" — just metadata
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model IncomeMarketing {
+  id             String   @id @default(uuid())
+  Date           String?
+  PartyName      String?
+  User           String?
+  Income         String?
+  Amount         String?
+  DueAmount      String?
+  PaymentMethode String?
+  Status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ExpenseMarketing {
+  id             String   @id @default(uuid())
+  Date           String?
+  PartyName      String?
+  User           String?
+  Expense        String?
+  Amount         String?
+  DueAmount      String?
+  PaymentMethode String?
+  Status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ------------------------------------------------------------------
+// TASK ENUMS
+// ------------------------------------------------------------------
+enum TaskStatus {
+  todo
+  in_progress
+  under_review
+  completed
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+// ------------------------------------------------------------------
+// TASK MODEL
+// ------------------------------------------------------------------
+model Task {
+  id          String       @id @default(uuid())
+  title       String
+  description String?      @db.LongText
+  priority    TaskPriority @default(medium)
+  dueDate     DateTime?
+  status      TaskStatus   @default(todo)
+
+  // Creator (Admin)
+  createdById String
+  createdBy   Admin  @relation("AdminCreatedTasks", fields: [createdById], references: [id])
+
+  // Assignee (Customer aka Employee)
+  assignedToId String
+  assignedTo   Employee @relation("EmployeeAssignedTasks", fields: [assignedToId], references: [id])
+
+  // Relations
+  subTasks SubTask[]
+
+  // Which client is this task for?
+  customerId String?
+  customer   Customer? @relation("CustomerTasks", fields: [customerId], references: [id], onDelete: Cascade)
+
+  // (Optional) Allow clients to approve deliverables
+  isClientApproved Boolean @default(false)
+  clientFeedback   String? @db.LongText
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assignedToId])
+  @@index([createdById])
+}
+
+// ------------------------------------------------------------------
+// SUBTASK MODEL
+// ------------------------------------------------------------------
+model SubTask {
+  id    String @id @default(uuid())
+  title String
+
+  description String? @db.LongText
+
+  status      TaskStatus @default(todo)
+  isCompleted Boolean    @default(false)
+
+  // Link to Parent Task
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // Creator (Customer aka Employee)
+  createdById String
+  createdBy   Employee @relation("EmployeeCreatedSubTasks", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([status])
+}
+
+model DailyAIReport {
+  id         String   @id @default(uuid())
+  type       String // e.g., "morning_brief", "evening_summary"
+  reportDate DateTime @default(now())
+
+  // The actual markdown or structured JSON report generated by the AI
+  content String @db.LongText
+
+  // Optional: Link to a specific admin if you have multiple managers
+  adminId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([reportDate])
+}
+
+model Schedule {
+  id          String   @id @default(uuid())
+  date        String?
+  Time        String?
+  Description String?
+  User        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CompanyProject {
+  id            String  @id @default(uuid())
+  ProjectName   String
+  ProjectType   String? @default("")
+  ProjectStatus String? @default("")
+
+  City        String? @default("")
+  Location    String? @default("")
+  Area        String? @default("")
+  Range       String? @default("")
+  Adderess    String? @default("")
+  Facillities String? @default("")
+  Amenities   String? @default("")
+
+  Description String? @default("")
+  Video       String? @default("")
+  GoogleMap   String? @default("")
+
+  CustomerImage Json? @default("[]") // JSON array of strings
+  SitePlan      Json? @default("[]") // JSON array of strings
+
+  CreatedBy String? // Admin ID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BuilderSlider {
+  id        String   @id @default(uuid())
+  Image     Json?    @default("[]") // stores ["url1","url2"]
+  Status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PropertyShortlist {
+  id String @id @default(uuid())
+
+  // 1. The Demand: The customer who is looking (e.g., The Buyer)
+  customerId String
+  customer   Customer @relation("CustomerShortlist", fields: [customerId], references: [id], onDelete: Cascade)
+
+  // 2. The Supply: The property/lead being saved (e.g., The Seller)
+  propertyId String
+  property   Customer @relation("PropertyShortlist", fields: [propertyId], references: [id], onDelete: Cascade)
+
+  // 3. Status Tracking
+  // e.g., "shortlisted", "contacted", "site_visit", "rejected"
+  status String @default("shortlisted")
+
+  // 4. Audit Trail
+  savedById String? // Which admin/user clicked 'Save'?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Prevent an admin from saving the exact same property twice for the same customer
+  @@unique([customerId, propertyId])
+  @@index([customerId])
+  @@index([propertyId])
+}
+
+model CustomerArchive {
+  id String @id @default(uuid())
+
+  customerId String
+  customer   Customer @relation("CustomerArchivedByAdmin", fields: [customerId], references: [id], onDelete: Cascade)
+
+  adminId String
+  admin   Admin  @relation("AdminArchivedCustomers", fields: [adminId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([customerId, adminId]) // one archive record per admin per customer
+  @@index([adminId])
+  @@index([customerId])
+}
+
+model Customer {
+  id              String  @id @default(uuid())
+  Campaign        String? @default("")
+  CustomerType    String? @default("")
+  CustomerSubType String? @default("")
+  LeadType        String? @default("")
+  customerName    String
+  ContactNumber   String
+  City            String? @default("")
+  Location        String? @default("")
+  SubLocation     String? @default("")
+  Area            String? @default("")
+  Adderess        String? @default("")
+  Email           String? @default("")
+  Facillities     String? @default("")
+  ReferenceId     String? @default("")
+  CustomerId      String? @default("")
+  ClientId        String? @default("")
+  CustomerDate    String? @default("")
+  CustomerYear    String? @default("")
+  Other           String? @default("")
+  Description     String? @db.LongText
+  Video           String? @default("")
+  Verified        String? @default("")
+  GoogleMap       String? @default("")
+  URL             String? @default("")
+  Price           String? @default("")
+  PriceNumber     Int?
+  CustomerFields  Json?   @default("{}")
+  CustomerImage   Json?   @default("[]")
+  SitePlan        Json?   @default("[]")
+  isFavourite     Boolean @default(false)
+  isChecked       Boolean @default(false)
+  LeadTemperature String? @default("cold")
+  DealClosed      Boolean @default(false)
+
+  Password String? @default("")
+
+  // -------------------------------
+  // RELATIONS with Admin
+  // -------------------------------
+
+  // Assigned To Admin
+
+  AssignTo Admin[] @relation("CustomerAssignedTo")
+
+  // Created By Admin
+  CreatedById String?
+  CreatedBy   Admin?  @relation("CustomerCreatedBy", fields: [CreatedById], references: [id], map: "fk_customer_createdby")
+
+  isImported Boolean             @default(false)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime
+  followups  Followup[]
+  callLogs   CallLog[]
+  assignLogs CustomerAssignLog[] @relation("CustomerAssignLogs")
+
+  // Properties this customer has been shortlisted for (If this customer is a Buyer)
+  shortlistedProperties PropertyShortlist[] @relation("CustomerShortlist")
+
+  // Customers who have shortlisted this property (If this customer is a Seller)
+  shortlistedBy PropertyShortlist[] @relation("PropertyShortlist")
+
+  // Customers who have archieved this customer
+  archivedBy CustomerArchive[] @relation("CustomerArchivedByAdmin")
+
+  chatSessions AgentChatSession[] @relation("CustomerChatSessions")
+
+  enquiries       Enquiry[]        @relation("CustomerEnquiries")
+  enquiryMessages EnquiryMessage[] @relation("CustomerEnquiryMessages")
+
+  assignedTeam Employee[] @relation("CustomerTeam")
+  // Tasks being done for this client's project
+  projectTasks Task[]     @relation("CustomerTasks")
+
+  // INDEXES (put here at bottom)
+  @@index([ContactNumber])
+  @@index([createdAt])
+  @@index([Campaign])
+  @@index([City])
+  @@index([ClientId])
+}
+
+model CustomerAssignLog {
+  customerId   String
+  adminId      String
+  assignedById String?
+  assignedAt   DateTime @default(now())
+
+  customer   Customer @relation("CustomerAssignLogs", fields: [customerId], references: [id], onDelete: Cascade)
+  admin      Admin    @relation("AdminAssignLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  assignedBy Admin?   @relation("AdminMadeAssignLogs", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@id([customerId, adminId])
+  @@index([adminId, assignedAt])
+  @@index([assignedById, assignedAt])
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  half_day
+  workfromhome
+  leave
+}
+
+model Employee {
+  id            String  @id @default(uuid())
+  Department    String? @default("")
+  Designation   String? @default("")
+  Role          String? @default("")
+  LeadType      String? @default("")
+  employeeName  String
+  ContactNumber String
+  City          String? @default("")
+  Location      String? @default("")
+  SubLocation   String? @default("")
+  Area          String? @default("")
+  Adderess      String? @default("")
+  Email         String? @default("")
+  Facillities   String? @default("")
+  ReferenceId   String? @default("")
+  EmployeeId    String? @default("")
+  ClientId      String? @default("")
+  EmployeeDate  String? @default("")
+  Other         String? @default("")
+  Description   String? @db.LongText
+  Video         String? @default("")
+  Verified      String? @default("")
+  GoogleMap     String? @default("")
+  URL           String? @default("")
+  EmployeeImage Json?   @default("[]")
+  Password      String? @default("")
+
+  // -------------------------------
+  // RELATIONS with Admin
+  // -------------------------------
+
+  // Assigned To Admin
+
+  // Created By Admin
+  CreatedById String?
+  CreatedBy   Admin?  @relation("EmployeeCreatedBy", fields: [CreatedById], references: [id], map: "fk_employee_createdby")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  attendanceLogs EmployeeAttendance[] @relation("EmployeeAttendanceLogs")
+
+  // Tasks assigned to this employee
+  assignedTasks Task[] @relation("EmployeeAssignedTasks")
+
+  // Subtasks created by this employee
+  createdSubTasks SubTask[] @relation("EmployeeCreatedSubTasks")
+
+  chatSessions AgentChatSession[] @relation("EmployeeChatSessions")
+
+  // The clients this employee is actively working for
+  assignedClients Customer[] @relation("CustomerTeam")
+
+  // INDEXES (put here at bottom)
+  @@index([ContactNumber])
+  @@index([createdAt])
+  @@index([Department])
+  @@index([City])
+}
+
+model EmployeeAttendance {
+  id String @id @default(uuid())
+
+  employeeId String
+  employee   Employee @relation("EmployeeAttendanceLogs", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  dateString String // Format: YYYY-MM-DD (e.g., "2024-10-25")
+  status     AttendanceStatus @default(present)
+
+  clockIn      DateTime?
+  clockOut     DateTime?
+  totalMinutes Int       @default(0)
+
+  // To track if the system auto-stopped it at 6:30 PM or if the admin manually changed it
+  isAutoStopped   Boolean @default(false)
+  markedByAdminId String?
+
+  markedByAdmin Admin? @relation("AdminMarkedAttendance", fields: [markedByAdminId], references: [id])
+
+  notes String? @db.LongText
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, dateString])
+  @@index([dateString])
+  @@index([employeeId])
+  @@index([status])
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  Name      String   @unique
+  Status    String   @default("Active") // Changed from Status enum to String (or keep enum if defined)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  designations Designation[]
+  roleEmps     RoleEmp[]
+}
+
+model Designation {
+  id     String @id @default(uuid())
+  Name   String @default("")
+  Status String @default("Active")
+
+  Department   Department @relation(fields: [departmentId], references: [id])
+  departmentId String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  roleEmps  RoleEmp[]
+}
+
+model RoleEmp {
+  id        String   @id @default(uuid())
+  Name      String
+  Status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  departmentId String
+  Department   Department @relation(fields: [departmentId], references: [id])
+
+  designationId String
+  Designation   Designation @relation(fields: [designationId], references: [id])
+}
+
+model Followup {
+  id               String  @id @default(uuid())
+  customerId       String
+  StartDate        String?
+  StatusType       String?
+  FollowupNextDate String?
+  Description      String?
+
+  customer    Customer @relation(fields: [customerId], references: [id])
+  // Created By Admin
+  CreatedById String?
+  CreatedBy   Admin?   @relation("FollowupCreatedBy", fields: [CreatedById], references: [id], map: "fk_followup_createdby")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  contactId String?
+
+  isNotified Boolean @default(false)
+}
+
+model Contact {
+  id                    String  @id @default(uuid())
+  Campaign              String?
+  Range                 String?
+  ContactNo             String? @default("")
+  Location              String?
+  ContactType           String?
+  Name                  String  @default("")
+  City                  String?
+  Address               String? @default("")
+  ContactIndustry       String? @default("")
+  ContactFunctionalArea String? @default("")
+  ContactId             String? @default("")
+  ClientId              String? @default("")
+  ReferenceId           String? @default("")
+  Notes                 String? @default("")
+  Facilities            String? @default("")
+  date                  String? @default("")
+  Email                 String? @default("")
+  CompanyName           String? @default("")
+  Website               String? @default("")
+  Status                String? @default("")
+  Qualifications        String? @default("")
+  isFavourite           Boolean @default(false)
+  isImported            Boolean @default(false)
+
+  AssignToId String?
+  AssignTo   Admin?  @relation("ContactAssignedTo", fields: [AssignToId], references: [id], map: "fk_contact_assignto")
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  followups        Followup[]
+  contactFollowups ContactFollowup[]
+}
+
+model ContactFollowup {
+  id               String  @id @default(uuid())
+  contactId        String
+  StartDate        String?
+  StatusType       String?
+  FollowupNextDate String?
+  Description      String?
+
+  contact Contact @relation(fields: [contactId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RequestUser {
+  id             String  @id @default(uuid())
+  name           String
+  email          String
+  password       String
+  phone          String?
+  role           String?
+  company        String?
+  specialization String?
+  city           String?
+  experience     String?
+  image          Json?   @default("[]")
+
+  createdAt DateTime @default(now())
+}
+
+model CustomerFieldLabel {
+  id           Int    @id @default(autoincrement())
+  fieldKey     String @unique // customerName, contactNumber
+  displayLabel String // Student Name, Mobile Number
+}
+
+model Notification {
+  id         String  @id @default(uuid())
+  type       String
+  title      String
+  message    String  @db.LongText
+  entityId   String?
+  entityType String?
+
+  receiverId String?
+  senderId   String?
+
+  isRead    Boolean  @default(false)
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now())
+
+  receiver Admin? @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
+
+  sender Admin? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([receiverId])
+  @@index([entityId])
+  @@index([type])
+}
+
+model AIAgent {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  type        String
+  status      Status  @default(Active)
+
+  campaign      String?
+  targetSegment String?
+  capability    String?
+
+  AssignTo Admin[] @relation("AIAgentAssignedTo")
+
+  createdAt DateTime @default(now())
+
+  promptRole String? @db.LongText
+
+  // OPTIONAL WEBHOOK CONFIGURATIONS
+  webhookUrl     String?
+  webhookMethod  String? @default("POST")
+  webhookHeaders Json? // Stores dynamic headers like {"Authorization": "Bearer ..."}
+  webhookPayload Json? // Stores dynamic base payloads like {"api_key": "..."}
+
+  // Relational arrays
+  campaignRuns AgentCampaignRun[]
+  logs         AgentExecutionLog[]
+}
+
+// =================================================================
+// 🤖 CAMPAIGN EXECUTION MODELS
+// =================================================================
+
+model AgentCampaignRun {
+  id           String    @id @default(uuid())
+  agentId      String
+  campaignId   String // Reference to your existing Campaign model ID
+  status       RunStatus @default(planning)
+  strategyText String?   @db.LongText // The AI's generated plan
+  targetCount  Int       @default(0) // How many leads are being targeted
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  agent  AIAgent             @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  assets CampaignAsset[]
+  logs   AgentExecutionLog[]
+
+  @@index([agentId])
+  @@index([campaignId])
+}
+
+model CampaignAsset {
+  id               String         @id @default(uuid())
+  campaignRunId    String
+  customerId       String // Reference to your existing Customer model ID
+  channel          ChannelType
+  generatedContent String         @db.LongText
+  approvalStatus   ApprovalStatus @default(pending) // Human-in-the-loop gate
+  sentAt           DateTime?
+  errorLog         String?        @db.LongText
+
+  // Relations
+  campaignRun AgentCampaignRun @relation(fields: [campaignRunId], references: [id], onDelete: Cascade)
+
+  @@index([campaignRunId])
+  @@index([customerId])
+}
+
+model AgentExecutionLog {
+  id            String   @id @default(uuid())
+  agentId       String
+  campaignRunId String?
+  level         LogLevel @default(info)
+  message       String   @db.LongText
+  createdAt     DateTime @default(now())
+
+  // Relations
+  agent       AIAgent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  campaignRun AgentCampaignRun? @relation(fields: [campaignRunId], references: [id], onDelete: SetNull)
+
+  @@index([agentId])
+  @@index([campaignRunId])
+}
+
+// =================================================================
+// ENUMS FOR CAMPAIGN EXECUTION
+// =================================================================
+
+enum RunStatus {
+  planning
+  pending_approval
+  executing
+  completed
+  failed
+}
+
+enum ChannelType {
+  email
+  sms
+  whatsapp
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum LogLevel {
+  info
+  warning
+  error
+}
+
+model CallLog {
+  id String @id @default(uuid())
+
+  // relation
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  // Basic Call Info
+  participantIdentity String  @unique
+  agentId             String? // use_agent_id
+  organizationId      String?
+
+  calledTo        String?
+  normalizedPhone String? // last 10 digits for matching
+
+  callDirection String? // inbound / outbound
+  callStatus    String? // Answered / Not Answered
+  callDuration  String? // in seconds
+
+  startTime  DateTime?
+  endTime    DateTime?
+  calledTime DateTime?
+
+  // Media
+  recordingUrl String?
+
+  //AI Outputs
+  transcript String? @db.LongText
+  summary    String? @db.LongText
+  sentiment  String?
+
+  //Extracted Structured Fields (VERY IMPORTANT)
+  customerName       String?
+  propertyType       String?
+  location           String?
+  budget             String?
+  budgetRange        String?
+  useCase            String? // personal / investment
+  siteVisitScheduled Boolean?
+
+  // Costing
+  totalCallCost String?
+  telcoPricing  String?
+  agentCost     String?
+
+  // Raw JSON (backup)
+  rawJson Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([calledTo])
+  @@index([normalizedPhone])
+  @@index([customerId])
+}
+
+model Property {
+  id              String  @id @default(uuid())
+  Campaign        String? @default("")
+  PropertyType    String? @default("")
+  PropertySubType String? @default("")
+  propertyName    String
+  ContactNumber   String
+  City            String? @default("")
+  Location        String? @default("")
+  SubLocation     String? @default("")
+  Area            String? @default("")
+  Adderess        String? @default("")
+  Email           String? @default("")
+  Facillities     Json?   @default("{}")
+  ReferenceId     String? @default("")
+  PropertyId      String? @default("")
+  ClientId        String? @default("")
+  PropertyDate    String? @default("")
+  PropertyYear    String? @default("")
+  Other           String? @default("")
+  Description     String? @db.LongText
+  Video           String? @default("")
+  Verified        String? @default("")
+  GoogleMap       String? @default("")
+  URL             String? @default("")
+  Price           Float?  @default(0)
+  Status          String? @default("")
+  Features        Json?   @default("[]")
+  PropertyImage   Json?   @default("[]")
+  AgentImage      Json?   @default("[]")
+  AgentInfo       Json?   @default("{}")
+  isFavourite     Boolean @default(false)
+  isChecked       Boolean @default(false)
+
+  // -------------------------------
+  // RELATIONS with Admin
+  // -------------------------------
+
+  // Created By Admin
+  CreatedById String?
+  CreatedBy   Admin?  @relation("PropertyCreatedBy", fields: [CreatedById], references: [id], map: "fk_property_createdby")
+
+  isImported Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+}
+
+model FacebookPost {
+  id String @id @default(cuid())
+
+  postId  String? @unique
+  groupId String?
+
+  title String?
+  text  String  @db.LongText
+
+  url          String? @unique
+  externalLink String?
+
+  author   String?
+  authorId String?
+
+  likes    Int @default(0)
+  comments Int @default(0)
+  shares   Int @default(0)
+
+  engagementScore Int @default(0)
+
+  media Json? // array of image/video URLs
+
+  hasMedia Boolean @default(false)
+  isVideo  Boolean @default(false)
+
+  createdAt DateTime?
+  timestamp BigInt?
+
+  scrapedAt DateTime @default(now())
+
+  source String @default("facebook")
+
+  @@index([groupId])
+  @@index([engagementScore])
+  @@index([createdAt])
+}
+
+model InstagramPost {
+  id String @id @default(cuid())
+
+  postId  String? @unique
+  groupId String?
+
+  title String?
+  text  String  @db.LongText
+
+  url          String? @unique
+  externalLink String?
+
+  author   String?
+  authorId String?
+
+  likes    Int @default(0)
+  comments Int @default(0)
+  shares   Int @default(0)
+
+  engagementScore Int @default(0)
+
+  media Json? // array of image/video URLs
+
+  hasMedia Boolean @default(false)
+  isVideo  Boolean @default(false)
+
+  createdAt DateTime?
+  timestamp BigInt?
+
+  scrapedAt DateTime @default(now())
+
+  source String @default("instagram")
+
+  @@index([groupId])
+  @@index([engagementScore])
+  @@index([createdAt])
+}
+
+// Simple. No engagement noise. url is unique to prevent duplicate saves.
+
+model MinedLead {
+  id          String    @id @default(cuid())
+  source      String // 'reddit' | 'facebook' | 'instagram'
+  author      String? // display name / username
+  authorId    String? // platform UID (FB authorId, Reddit u/handle)
+  title       String?   @db.VarChar(512)
+  content     String    @db.Text // post body / caption
+  url         String    @unique // deduplication key
+  postContext String? // subreddit name, FB page name, IG hashtag, etc.
+  postedAt    DateTime? // original post timestamp if available
+  savedAt     DateTime  @default(now())
+
+  @@index([source])
+  @@index([savedAt])
+  @@map("mined_leads")
+}
+
+model SocialAccount {
+  id          String  @id @default(cuid())
+  userId      String
+  platform    String // INSTAGRAM
+  accessToken String  @db.LongText
+  igAccountId String
+  pageId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, platform])
+}
+
+model ScheduledPost {
+  id      String @id @default(cuid())
+  adminId String
+  admin   Admin  @relation(fields: [adminId], references: [id]) // Assumes you have a User model
+
+  // Post Content
+  imageUrl String  @db.Text
+  caption  String? @db.Text
+
+  // Meta Specifics
+  platform    String  @default("INSTAGRAM")
+  igAccountId String
+  containerId String? // The ID returned by Step 3 (Media Container)
+  scheduledId String? // The ID returned by Step 4 (Scheduled Object)
+
+  // Timing
+  scheduledTime DateTime
+  status        PostStatus @default(SCHEDULED) // Enum: SCHEDULED, PUBLISHED, FAILED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PostStatus {
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+model SalesScript {
+  id        String   @id @default(uuid())
+  Name      String
+  Content   String   @db.LongText
+  Status    String
+  mode      String?  @default("hindi")
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminAiApiKey {
+  id       String     @id @default(uuid())
+  provider AIProvider // Re-use your enum (OPENAI, GEMINI, etc.)
+  apiKey   String     @db.Text // Store ENCRYPTED
+  model    String
+
+  status NormalStatus @default(ACTIVE)
+
+  adminId String
+  admin   Admin  @relation(fields: [adminId], references: [id]) // Assumes you have a User model
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // This ensures a user can only have ONE master key per provider
+  @@unique([adminId, provider])
+}
+
+model CRMApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String? // e.g., "Zapier Integration", "Personal Mac Script"
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+}
+
+enum ActivityAction {
+  create
+  update
+  delete
+  assign
+  unassign
+  login
+  logout
+  import
+}
+
+enum ActivityEntity {
+  customer
+  followup
+  property
+  contact
+  admin
+}
+
+model ActivityLog {
+  id String @id @default(uuid())
+
+  // WHO did it
+  adminId  String
+  admin    Admin   @relation("AdminActivityLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  role     Role? // snapshot of role at the time
+  city     String?
+  clientId String?
+
+  // WHAT happened
+  action ActivityAction
+  entity ActivityEntity
+
+  // ON WHICH RECORD (kept as plain strings on purpose — NO foreign key,
+  // so the log survives after the customer/followup is deleted)
+  entityId   String?
+  entityName String? // customerName / followup status etc. for display
+  customerId String? // quick reference for customer-linked activities
+  followupId String?
+
+  // For assign / unassign : to whom
+  targetAdminId  String?
+  targetAdminRef Admin?  @relation("AdminActivityTargets", fields: [targetAdminId], references: [id], onDelete: SetNull)
+
+  // Which online-session this activity belongs to (for the timeline)
+  sessionId String?
+  session   UserSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  meta      Json?    @default("{}") // changed fields, counts, ip, anything extra
+  createdAt DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([entity, action, createdAt])
+  @@index([clientId, createdAt])
+  @@index([customerId])
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model UserSession {
+  id String @id @default(uuid())
+
+  adminId String
+  admin   Admin  @relation("AdminSessions", fields: [adminId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  role     Role?
+
+  loginAt     DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  logoutAt    DateTime?
+  durationSec Int?
+  isOnline    Boolean   @default(true)
+
+  ip        String?
+  userAgent String? @db.Text
+
+  activities ActivityLog[]
+
+  @@index([adminId, loginAt])
+  @@index([isOnline])
+  @@index([clientId, loginAt])
+}
+
+// --- Add this Enum ---
+enum EnquiryStatus {
+  open
+  pending
+  resolved
+  closed
+}
+
+// --- Add these New Models ---
+model Enquiry {
+  id       String        @id @default(uuid())
+  ticketId String        @unique // e.g., "TKT-10293" for UI reference
+  subject  String
+  status   EnquiryStatus @default(open)
+  priority String        @default("medium") // low, medium, high, urgent
+
+  customerId String
+  customer   Customer @relation("CustomerEnquiries", fields: [customerId], references: [id], onDelete: Cascade)
+
+  messages EnquiryMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model EnquiryMessage {
+  id          String @id @default(uuid())
+  message     String @db.LongText
+  attachments Json?  @default("[]") // For future proofing uploads
+
+  enquiryId String
+  enquiry   Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  // Either adminId OR customerId will be filled depending on who sent the reply
+  adminId String?
+  admin   Admin?  @relation("AdminEnquiryMessages", fields: [adminId], references: [id], onDelete: SetNull)
+
+  customerId String?
+  customer   Customer? @relation("CustomerEnquiryMessages", fields: [customerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([enquiryId])
+  @@index([adminId])
+  @@index([customerId])
+}
+
+// ------------------------------------------------------------------
+// AI CHAT SESSIONS & HISTORY
+// ------------------------------------------------------------------
+model AgentChatSession {
+  id       String  @id @default(uuid())
+  title    String  @default("New Conversation")
+  isPinned Boolean @default(false)
+
+  // Link to Admin (if an Admin is chatting)
+  adminId String?
+  admin   Admin?  @relation("AdminChatSessions", fields: [adminId], references: [id], onDelete: Cascade)
+
+  // Link to Customer/Employee (if an Employee is chatting)
+  employeeId String?
+  employee   Employee? @relation("EmployeeChatSessions", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  customerId String?
+  customer   Customer? @relation("CustomerChatSessions", fields: [customerId], references: [id], onDelete: Cascade)
+
+  // The messages inside this specific session
+  messages AgentChatHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([adminId])
+  @@index([customerId])
+  @@index([employeeId])
+}
+
+model AgentChatHistory {
+  id      String @id @default(uuid())
+  role    String // "user", "model", "function"
+  content String @db.LongText
+
+  // Link to the parent Chat Session
+  sessionId String
+  session   AgentChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+}
