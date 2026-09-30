@@ -4,13 +4,16 @@ import { notifyCustomerStepChanged, notifyCustomerTaskAssigned } from "../jobs/n
 import ApiError from "../utils/ApiError.js";
 import { getCustomerAccessFilter } from "./controller.customer.js"; // RESTORED IMPORT
 
+
 // ==================================================================
 // 🏢 ADMIN CONTROLLERS (For CRM Portal)
 // ==================================================================
 export const createAdminTask = async (req, res, next) => {
   try {
     const adminId = req.admin.id || req.admin._id;
-    const { title, description, priority, dueDate, assignedToIds, subTasks } = req.body;
+    
+    // 🚨 FIX 1: Extracted customerId from req.body
+    const { title, description, priority, dueDate, assignedToIds, subTasks, customerId } = req.body;
 
     if (!title || !assignedToIds || !Array.isArray(assignedToIds) || assignedToIds.length === 0) {
       throw new ApiError(400, "Title and at least one Assigned Employee are required");
@@ -26,6 +29,7 @@ export const createAdminTask = async (req, res, next) => {
         dueDate: dueDate ? new Date(dueDate) : null,
         assignedToId: empId,
         createdById: adminId,
+        customerId: customerId || null, // 🚨 FIX 2: Attach to the Customer/Project
       };
 
       if (validSubTasks.length > 0) {
@@ -42,13 +46,26 @@ export const createAdminTask = async (req, res, next) => {
       return prisma.task.create({
         data: taskData,
         include: {
-          assignedTo: { select: { employeeName: true, Email: true } }, // Updated field
+          assignedTo: { select: { employeeName: true, Email: true } }, 
           subTasks: true
         }
       });
     });
 
     const newTasks = await prisma.$transaction(taskPromises);
+
+    // 🚨 FIX 3: Update client team and trigger Live Notifications!
+    if (customerId) {
+      // Connect employees to the client's team so they show up in the Client Portal team list
+      await prisma.customer.update({
+        where: { id: customerId },
+        data: { assignedTeam: { connect: assignedToIds.map(id => ({ id })) } }
+      });
+
+      // Send the realtime socket update to the client's dashboard
+      newTasks.forEach((t) => notifyCustomerTaskAssigned(t.id)); 
+    }
+
     res.status(201).json({ success: true, message: `Task assigned successfully`, data: newTasks });
   } catch (error) {
     next(new ApiError(error.statusCode || 500, error.message));
