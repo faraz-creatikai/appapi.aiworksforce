@@ -607,13 +607,13 @@ model Customer {
   CreatedById String?
   CreatedBy   Admin?  @relation("CustomerCreatedBy", fields: [CreatedById], references: [id], map: "fk_customer_createdby")
 
-  isImported Boolean             @default(false)
-  createdAt  DateTime            @default(now())
-  updatedAt  DateTime
-  followups  Followup[]
-  callLogs   CallLog[]
+  isImported     Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime
+  followups      Followup[]
+  callLogs       CallLog[]
   sarvamCallLogs SarvamCallLog[]
-  assignLogs CustomerAssignLog[] @relation("CustomerAssignLogs")
+  assignLogs     CustomerAssignLog[] @relation("CustomerAssignLogs")
 
   // Properties this customer has been shortlisted for (If this customer is a Buyer)
   shortlistedProperties PropertyShortlist[] @relation("CustomerShortlist")
@@ -1080,40 +1080,40 @@ model CallLog {
 }
 
 model SarvamCallLog {
-  id                  String   @id @default(uuid())
-  customerId          String?
-  customer            Customer? @relation(fields: [customerId], references: [id])
+  id         String    @id @default(uuid())
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
 
-  participantIdentity String   @unique
-  sarvamAppId         String?  // Sarvam equivalent of agentId
-  orgId               String?  // Sarvam org_id
-  workspaceId         String?  // Sarvam workspace_id
+  participantIdentity String  @unique
+  sarvamAppId         String? // Sarvam equivalent of agentId
+  orgId               String? // Sarvam org_id
+  workspaceId         String? // Sarvam workspace_id
 
-  calledTo            String?
-  normalizedPhone     String?
+  calledTo        String?
+  normalizedPhone String?
 
-  callStatus          String?
-  callDuration        Int?     // Storing as Int for easier aggregation
-  
-  startTime           DateTime?
-  endTime             DateTime?
+  callStatus   String?
+  callDuration Int? // Storing as Int for easier aggregation
 
-  recordingUrl        String?
-  transcript          String?  @db.LongText
-  summary             String?  @db.LongText
-  sentiment           String?
+  startTime DateTime?
+  endTime   DateTime?
+
+  recordingUrl String?
+  transcript   String? @db.LongText
+  summary      String? @db.LongText
+  sentiment    String?
 
   // Extracted Structured Fields
-  customerName        String?
-  budget              String?
-  useCase             String?
-  siteVisitScheduled  Boolean?
+  customerName       String?
+  budget             String?
+  useCase            String?
+  siteVisitScheduled Boolean?
 
-  totalCallCost       String?
-  rawJson             Json?    // Storing full webhook/analytics payload
+  totalCallCost String?
+  rawJson       Json? // Storing full webhook/analytics payload
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([calledTo])
   @@index([normalizedPhone])
