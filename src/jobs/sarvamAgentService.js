@@ -26,7 +26,7 @@ Return ONLY valid JSON. Nothing else. Must be in Hindi.
 export async function generateSarvamAgentInstructions(userMessage) {
   const systemPrompt = buildSarvamCallingPrompt(userMessage);
   
-  const { client, model, provider } = await getDynamicAIContext("GEMINI", "models/gemini-2.5-flash-lite");
+  const { client, model, provider } = await getDynamicAIContext("GEMINI", "models/gemini-2.5-flash");
   const raw = await executeDynamicPrompt(client, model, provider, systemPrompt);
 
   if (!raw || !raw.trim()) throw new Error("AI returned empty response");
