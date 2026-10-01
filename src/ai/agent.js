@@ -60,7 +60,7 @@ export function safeJsonParse(raw) {
  * HELPER: Routes the prompt to the correct SDK based on the active provider.
  * This prevents crashes when switching between Gemini, OpenAI, or future platforms.
  */
-async function executeDynamicPrompt(client, model, provider, promptText) {
+export async function executeDynamicPrompt(client, model, provider, promptText) {
   if (provider === "OPENAI") {
     const response = await client.chat.completions.create({
       model: model,

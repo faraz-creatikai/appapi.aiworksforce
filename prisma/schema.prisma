@@ -612,6 +612,7 @@ model Customer {
   updatedAt  DateTime
   followups  Followup[]
   callLogs   CallLog[]
+  sarvamCallLogs SarvamCallLog[]
   assignLogs CustomerAssignLog[] @relation("CustomerAssignLogs")
 
   // Properties this customer has been shortlisted for (If this customer is a Buyer)
@@ -1072,6 +1073,47 @@ model CallLog {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([calledTo])
+  @@index([normalizedPhone])
+  @@index([customerId])
+}
+
+model SarvamCallLog {
+  id                  String   @id @default(uuid())
+  customerId          String?
+  customer            Customer? @relation(fields: [customerId], references: [id])
+
+  participantIdentity String   @unique
+  sarvamAppId         String?  // Sarvam equivalent of agentId
+  orgId               String?  // Sarvam org_id
+  workspaceId         String?  // Sarvam workspace_id
+
+  calledTo            String?
+  normalizedPhone     String?
+
+  callStatus          String?
+  callDuration        Int?     // Storing as Int for easier aggregation
+  
+  startTime           DateTime?
+  endTime             DateTime?
+
+  recordingUrl        String?
+  transcript          String?  @db.LongText
+  summary             String?  @db.LongText
+  sentiment           String?
+
+  // Extracted Structured Fields
+  customerName        String?
+  budget              String?
+  useCase             String?
+  siteVisitScheduled  Boolean?
+
+  totalCallCost       String?
+  rawJson             Json?    // Storing full webhook/analytics payload
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@index([calledTo])
   @@index([normalizedPhone])

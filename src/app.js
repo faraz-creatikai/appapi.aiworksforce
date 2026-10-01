@@ -58,6 +58,7 @@ import departmentRoutes from "./routes/route.department.js";
 import designationRoutes from "./routes/route.designation.js";
 import roleEmpRoutes from "./routes/route.roleemp.js";
 import enquiryRoutes from "./routes/route.enquiry.js";
+import sarvamCallingRoutes from "./routes/sarvamCallingRoutes.js";
 
 const app = express();
 app.use(cookieParser());
@@ -76,6 +77,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/brand",brandRoutes);
 app.use("/api/attendance",attendanceRoutes);
 app.use("/api/enquiry",enquiryRoutes);
+app.use("/api/sarvam",sarvamCallingRoutes);
 app.use("/api/user",requestUserRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/mas/customerFields", customerFieldsRoutes);
