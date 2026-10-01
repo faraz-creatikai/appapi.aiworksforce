@@ -9,7 +9,7 @@ const SARVAM_WORKSPACE_ID = process.env.SARVAM_WORKSPACE_ID?.trim();
 const SARVAM_APP_ID = process.env.SARVAM_APP_ID?.trim();
 const SARVAM_CONNECTION_ID = process.env.SARVAM_CONNECTION_ID?.trim();
 const SARVAM_CALLER_NUMBER = process.env.SARVAM_CALLER_NUMBER?.trim();
-const WEBHOOK_BASE_URL = "http:/localhost:5000"; // must be publicly reachable
+const WEBHOOK_BASE_URL = "https://apiapp.aiworksforce.com"; // must be publicly reachable
 
 export const triggerSarvamCall = async (req, res, next) => {
   try {
