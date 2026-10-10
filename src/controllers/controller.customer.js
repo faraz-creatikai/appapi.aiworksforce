@@ -2312,20 +2312,31 @@ export const assignCustomer = async (req, res, next) => {
     }
 
     // ------------------------------------------------
-    // UPDATE — ✅ connect OR disconnect based on action
+    // UPDATE — connect OR disconnect based on action
     // ------------------------------------------------
     const prismaRelationAction = action === "remove" ? "disconnect" : "connect";
 
-    const updates = customers.map((customer) =>
-      prisma.customer.update({
+    // 1. Force order to match frontend array ONLY IF customerIds were explicitly provided
+    if (customerIds && customerIds.length > 0) {
+      customers.sort((a, b) => customerIds.indexOf(a.id) - customerIds.indexOf(b.id));
+    }
+
+    const baseTime = Date.now();
+
+    const updates = customers.map((customer, index) => {
+      // 2. Stagger timestamps by 1 second (1000ms) per record.
+      const staggeredTime = new Date(baseTime - (index * 1000));
+
+      return prisma.customer.update({
         where: { id: customer.id },
         data: {
+          updatedAt: staggeredTime, // 🚀 Apply staggered timestamp
           AssignTo: {
             [prismaRelationAction]: assignToId.map((id) => ({ id })),
           },
         },
-      })
-    );
+      });
+    });
 
     await Promise.all(updates);
 

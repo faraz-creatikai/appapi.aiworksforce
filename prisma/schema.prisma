@@ -81,6 +81,8 @@ model Admin {
 
   enquiryMessages EnquiryMessage[] @relation("AdminEnquiryMessages")
 
+  callingAgentConfigs CallingAgentConfig[]
+
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   scheduledPosts ScheduledPost[]
@@ -109,6 +111,35 @@ enum AIProvider {
   MISTRAL
   GROQ
   CUSTOM
+}
+
+model CallingAgentConfig {
+  id String @id @default(uuid())
+
+  name        String  @default("Default Agent")
+  description String? @default("")
+
+  // Sarvam Credentials
+  apiKey       String
+  orgId        String
+  workspaceId  String
+  appId        String
+  appVersion   Int    @default(1) // Added dynamic versioning
+  connectionId String
+  callerNumber String // Example: "+917965480147"
+  transferNumber String? @default("")
+
+  // Status flag to quickly toggle which agent is currently live
+  isActive Boolean @default(false)
+
+  // Relation back to your existing Admin schema
+  adminId String
+  admin   Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive]) // Optimizes the database query when searching for the active agent
 }
 
 model Campaign {
