@@ -48,7 +48,7 @@ const saveToSentFolder = async (rawEmail) => {
 export const sendEmail = async (to, subject, html) => {
   try {
     const mailOptions = {
-      from: `"CreatikAI Team" <${process.env.SMTP_USER}>`,
+      from: `"Aiworksforce Team" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html,
