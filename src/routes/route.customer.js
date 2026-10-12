@@ -45,6 +45,7 @@ import {
   customerLogout,
   getCustomerPortalData,
   getProjectUpdates,
+  getCustomerAccount,
 } from "../controllers/controller.customer.js";
 
 import upload from "../config/multer.js";
@@ -73,7 +74,7 @@ customerRoutes.post("/logout", customerLogout);
 // Portal Data
 customerRoutes.get("/portal-dashboard", protectCustomerRoute, getCustomerPortalData);
 customerRoutes.get("/portal-updates", protectCustomerRoute, getProjectUpdates);
-customerRoutes.get("/account/:id", protectCustomerRoute, getCustomerById);
+customerRoutes.get("/account/:id", protectCustomerRoute, getCustomerAccount);
 
 
 

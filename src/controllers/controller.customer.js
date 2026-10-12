@@ -4306,3 +4306,27 @@ export const getProjectUpdates = async (req, res, next) => {
     next(new ApiError(error.statusCode || 500, error.message));
   }
 };
+
+
+export const getCustomerAccount = async (req, res, next) => {
+  try {
+    const client = req.customer;
+    const { id } = req.params;
+
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) return next(new ApiError(404, "Customer not found"));
+
+    // role: user → only if assigned to them
+ /*    if (admin.role === "user" && customer.AssignToId !== admin.id)
+      return next(new ApiError(403, "Access denied"));
+ */
+    // role: city_admin → only same city
+    /*  if (admin.role === "city_admin" && customer.City !== admin.city)
+       return next(new ApiError(403, "Access denied")); */
+
+    const response = await transformCustomer(customer, admin);
+    res.status(200).json(response);
+  } catch (error) {
+    next(new ApiError(500, error.message));
+  }
+};
