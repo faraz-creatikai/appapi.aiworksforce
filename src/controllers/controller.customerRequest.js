@@ -1,4 +1,5 @@
 import prisma from "../config/prismaClient.js";
+import bcrypt from "bcryptjs";
 
 // ==========================================
 // 🌐 PUBLIC ROUTE (Submit Request)
@@ -88,9 +89,11 @@ export const getCustomerRequests = async (req, res) => {
 };
 
 // Approve Request and convert to Customer
+
 export const approveCustomerRequest = async (req, res) => {
   try {
     const { id } = req.params;
+    const { password } = req.body; // 🚀 Extract password from the request body
     const adminId = req.admin.id || req.admin._id;
 
     // 1. Check if request exists and is pending
@@ -109,6 +112,13 @@ export const approveCustomerRequest = async (req, res) => {
       });
     }
 
+    // 🚀 Hash the password if one was provided
+    let hashedPassword = "";
+    if (password && password.trim() !== "") {
+      const salt = await bcrypt.genSalt(10);
+      hashedPassword = await bcrypt.hash(password, salt);
+    }
+
     // 2. Perform Transaction (Create Customer + Update Request Status)
     const [newCustomer, updatedRequest] = await prisma.$transaction([
       
@@ -120,9 +130,8 @@ export const approveCustomerRequest = async (req, res) => {
           CompanyName: request.companyName,
           Description: request.bio,
           useCase: request.useCase,
-          // NOTE: ContactNumber is required in your Customer schema.
-          // Since the public form doesn't take it, we default it to an empty string to avoid Prisma crash.
           ContactNumber: "",
+          Password: hashedPassword, // 🚀 Save the hashed password
           CreatedById: adminId, 
           updatedAt: new Date(),
         },
