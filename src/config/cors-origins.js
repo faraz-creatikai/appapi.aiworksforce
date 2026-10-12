@@ -7,4 +7,4 @@ export const ALLOWED_ORIGINS = [
   "https://creatikai.com",
 ];
 
-export const clientUrl = "https://aiworksforce.com";
+export const clientUrl = "https://app.aiworksforce.com";

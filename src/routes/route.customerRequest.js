@@ -6,6 +6,7 @@ import {
   getCustomerRequests,
   approveCustomerRequest,
   denyCustomerRequest,
+  deleteCustomerRequests,
 } from "../controllers/controller.customerRequest.js";
 
 const customerRequestRoutes = express.Router();
@@ -29,5 +30,7 @@ customerRequestRoutes.put("/admin/:id/approve", protectRoute, isCityAdminOrAbove
 
 // Deny request
 customerRequestRoutes.put("/admin/:id/deny", protectRoute, isCityAdminOrAbove, denyCustomerRequest);
+
+customerRequestRoutes.delete("/admin", protectRoute, isCityAdminOrAbove, deleteCustomerRequests);
 
 export default customerRequestRoutes;

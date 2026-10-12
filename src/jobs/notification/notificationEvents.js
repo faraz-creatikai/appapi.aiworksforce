@@ -125,6 +125,37 @@ export const notifyFollowupNext = async ({ followup, customer }) => {
 };
 
 
+export const notifyNewCustomerRequest = async ({ requestData }) => {
+  try {
+    // Get all administrators to notify
+    const admins = await prisma.admin.findMany({
+      where: { role: "administrator" },
+      select: { id: true },
+    });
+
+    const receiverIds = admins.map(a => a.id);
+
+    if (receiverIds.length === 0) return;
+
+    await sendNotification({
+      type: "NEW_CUSTOMER_REQUEST",
+      title: "New Customer Request",
+      message: `${requestData.name} has requested account creation for ${requestData.companyName}`,
+      entityId: requestData.id,
+      entityType: "CustomerRequest",
+      receiverIds: receiverIds,
+      senderId: null, // System-triggered
+      metadata: {
+        email: requestData.email,
+        company: requestData.companyName,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Failed to send new customer request notification:", error);
+  }
+};
+
+
 // ─── Cron: runs every 24 hours, checks all due followups ─────────────────────
 export const initFollowupNotificationCron = () => {
   setInterval(async () => {
