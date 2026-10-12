@@ -63,6 +63,18 @@ import {
 
 const customerRoutes = express.Router();
 
+//customer routes
+
+
+customerRoutes.post("/login", customerLogin);
+customerRoutes.get("/check-auth", protectCustomerRoute, checkCustomerAuth);
+customerRoutes.post("/logout", customerLogout);
+
+// Portal Data
+customerRoutes.get("/portal-dashboard", protectCustomerRoute, getCustomerPortalData);
+customerRoutes.get("/portel-updates", protectCustomerRoute, getProjectUpdates);
+
+
 // ✅ Protected Routes
 customerRoutes.use(protectRoute);
 
@@ -79,16 +91,6 @@ customerRoutes.get("/dashboard/radar-chart-stats", getRadarChartStats);
 customerRoutes.get("/dashboard/employee/highlights", getEmployeeHighlights);
 
 
-//customer routes
-
-
-customerRoutes.post("/login", customerLogin);
-customerRoutes.get("/check-auth", protectCustomerRoute, checkCustomerAuth);
-customerRoutes.post("/logout", customerLogout);
-
-// Portal Data
-customerRoutes.get("/portal-dashboard", protectCustomerRoute, getCustomerPortalData);
-customerRoutes.get("/portel-updates", protectCustomerRoute, getProjectUpdates);
 
 // 🧭 Base CRUD Routes
 customerRoutes.get("/today", getTodayCustomers);
