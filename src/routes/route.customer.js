@@ -73,6 +73,7 @@ customerRoutes.post("/logout", customerLogout);
 // Portal Data
 customerRoutes.get("/portal-dashboard", protectCustomerRoute, getCustomerPortalData);
 customerRoutes.get("/portel-updates", protectCustomerRoute, getProjectUpdates);
+customerRoutes.get("/customer-account/:id", protectCustomerRoute, getCustomerById);
 
 
 // ✅ Protected Routes
