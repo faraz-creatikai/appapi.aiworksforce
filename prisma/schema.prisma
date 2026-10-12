@@ -54,16 +54,17 @@ model Admin {
   // Self Relation (admins created by this admin)
   createdAdmins Admin[] @relation("CreatedByRelation")
 
-  assignedCustomers Customer[]           @relation("CustomerAssignedTo")
-  assignedAIAgents  AIAgent[]            @relation("AIAgentAssignedTo")
-  createdCustomers  Customer[]           @relation("CustomerCreatedBy")
-  createdEmployee   Employee[]           @relation("EmployeeCreatedBy")
-  createdFollowups  Followup[]           @relation("FollowupCreatedBy")
-  createdPropertys  Property[]           @relation("PropertyCreatedBy")
-  archivedCustomers CustomerArchive[]    @relation("AdminArchivedCustomers")
-  markedAttendances EmployeeAttendance[] @relation("AdminMarkedAttendance")
+  assignedCustomers         Customer[]           @relation("CustomerAssignedTo")
+  assignedAIAgents          AIAgent[]            @relation("AIAgentAssignedTo")
+  createdCustomers          Customer[]           @relation("CustomerCreatedBy")
+  createdEmployee           Employee[]           @relation("EmployeeCreatedBy")
+  createdFollowups          Followup[]           @relation("FollowupCreatedBy")
+  createdPropertys          Property[]           @relation("PropertyCreatedBy")
+  archivedCustomers         CustomerArchive[]    @relation("AdminArchivedCustomers")
+  markedAttendances         EmployeeAttendance[] @relation("AdminMarkedAttendance")
   // Tasks created by this admin
-  createdTasks      Task[]               @relation("AdminCreatedTasks")
+  createdTasks              Task[]               @relation("AdminCreatedTasks")
+  processedCustomerRequests CustomerRequest[]    @relation("AdminProcessedCustomerRequests")
 
   assignedContact Contact[] @relation("ContactAssignedTo")
 
@@ -120,13 +121,13 @@ model CallingAgentConfig {
   description String? @default("")
 
   // Sarvam Credentials
-  apiKey       String
-  orgId        String
-  workspaceId  String
-  appId        String
-  appVersion   Int    @default(1) // Added dynamic versioning
-  connectionId String
-  callerNumber String // Example: "+917965480147"
+  apiKey         String
+  orgId          String
+  workspaceId    String
+  appId          String
+  appVersion     Int     @default(1) // Added dynamic versioning
+  connectionId   String
+  callerNumber   String // Example: "+917965480147"
   transferNumber String? @default("")
 
   // Status flag to quickly toggle which agent is currently live
@@ -606,6 +607,8 @@ model Customer {
   ReferenceId     String? @default("")
   CustomerId      String? @default("")
   ClientId        String? @default("")
+  CompanyName     String? @default("")
+  useCase         String? @default("")
   CustomerDate    String? @default("")
   CustomerYear    String? @default("")
   Other           String? @default("")
@@ -685,6 +688,29 @@ model CustomerAssignLog {
   @@id([customerId, adminId])
   @@index([adminId, assignedAt])
   @@index([assignedById, assignedAt])
+}
+
+model CustomerRequest {
+  id          String  @id @default(uuid())
+  name        String
+  email       String
+  useCase     String? @default("")
+  companyName String? @default("")
+  bio         String? @db.LongText
+
+  // Request status: "pending", "approved", "denied"
+  status String @default("pending")
+
+  // Relation: which admin processed (accepted/denied) this request
+  processedById String?
+  processedBy   Admin?  @relation("AdminProcessedCustomerRequests", fields: [processedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([processedById])
 }
 
 enum AttendanceStatus {
