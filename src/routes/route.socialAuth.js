@@ -5,10 +5,6 @@ import upload from "../config/multer.js";
 
 const socialAuthRoutes = express.Router();
 
-socialAuthRoutes.use(protectRoute);
-
-
-
 
 //saving mined leads 
 
