@@ -3,6 +3,7 @@ export const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:5678/",
   "https://aiworksforce.com",
+  "https://www.aiworksforce.com",
   "https://app.aiworksforce.com",
   "https://creatikai.com",
 ];
