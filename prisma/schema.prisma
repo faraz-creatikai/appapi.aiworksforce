@@ -84,6 +84,8 @@ model Admin {
 
   callingAgentConfigs CallingAgentConfig[]
 
+  linkedinAccount LinkedinAccount?
+
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   scheduledPosts ScheduledPost[]
@@ -697,6 +699,7 @@ model CustomerRequest {
   useCase     String? @default("")
   companyName String? @default("")
   bio         String? @db.LongText
+  phone       String?
 
   // Request status: "pending", "approved", "denied"
   status String @default("pending")
@@ -1331,6 +1334,32 @@ model SocialAccount {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, platform])
+}
+
+model LinkedinAccount {
+  id      String @id @default(uuid())
+  adminId String @unique
+  admin   Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  // LinkedIn Identity
+  linkedinId     String  @unique
+  personUrn      String // Required as the 'author' field when publishing (e.g., urn:li:person:12345)
+  name           String?
+  profilePicture String?
+  email          String?
+  locale         String?
+
+  // OAuth Credentials 
+  // Stored as @db.Text because LinkedIn tokens can exceed 500-1000 characters
+  accessToken           String    @db.Text
+  accessTokenExpiresAt  DateTime
+  refreshToken          String?   @db.Text
+  refreshTokenExpiresAt DateTime?
+
+  scopesGranted String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ScheduledPost {

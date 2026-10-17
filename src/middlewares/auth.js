@@ -183,9 +183,6 @@ export const protectCustomerRoute = async (req, res, next) => {
   }
 };
 
-
-
-
 // ------------------- PROTECT ROUTE -------------------
 // ------------------- PROTECT ROUTE -------------------
 

@@ -60,6 +60,7 @@ import roleEmpRoutes from "./routes/route.roleemp.js";
 import enquiryRoutes from "./routes/route.enquiry.js";
 import sarvamCallingRoutes from "./routes/sarvamCallingRoutes.js";
 import customerRequestRoutes from "./routes/route.customerRequest.js";
+import linkedinRoutes from "./routes/route.linkdin.js";
 
 const app = express();
 app.use(cookieParser());
@@ -123,6 +124,7 @@ app.use("/api/aiagent",aiAgentRoutes)
 app.use("/api/airteliq", airteliqCallRoutes);
 app.use("/api/social-content", socialContentRoutes);
 app.use("/api/social-auth",socialAuthRoutes);
+app.use("/api/linkedin",linkedinRoutes);
 app.use("/api/property", propertyRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/salesscript",salesScriptRoutes);

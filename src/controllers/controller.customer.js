@@ -1809,7 +1809,7 @@ export const createCustomer = async (req, res, next) => {
     });
 
     /* web hook trigger n8n  */
-    /*     const automationRes = await fetch("http://localhost:5678/webhook/customer-created", {
+        const automationRes = await fetch("http://localhost:5678/webhook/customer-created", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -1820,7 +1820,7 @@ export const createCustomer = async (req, res, next) => {
             phone: newCustomer.ContactNumber
           })
         });
-        console.log(" automation res is ", automationRes) */
+        console.log(" automation res is ", automationRes)
 
     // 🔥 UNIVERSAL EVENT TRIGGER
     /*     await notifyCustomerCreated({

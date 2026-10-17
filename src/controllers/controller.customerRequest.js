@@ -9,7 +9,7 @@ import { notifyNewCustomerRequest } from "../jobs/notification/notificationEvent
 // ==========================================
 export const createCustomerRequest = async (req, res, next) => {
     try {
-        const { name, email, useCase, companyName, bio } = req.body;
+        const { name, email, useCase, companyName, bio, phone } = req.body;
 
         if (!name || !email) {
             return res.status(400).json({
@@ -26,6 +26,7 @@ export const createCustomerRequest = async (req, res, next) => {
                 companyName: companyName || "",
                 bio: bio || "",
                 status: "pending", // Default
+                phone: phone || "",
             },
         });
 
@@ -136,7 +137,7 @@ export const approveCustomerRequest = async (req, res) => {
                     CompanyName: request.companyName,
                     Description: request.bio,
                     useCase: request.useCase,
-                    ContactNumber: "",
+                    ContactNumber: request.phone,
                     Password: hashedPassword, // 🚀 Save the hashed password
                     CreatedById: adminId,
                     updatedAt: new Date(),
