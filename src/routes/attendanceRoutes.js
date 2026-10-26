@@ -61,6 +61,7 @@ attendanceRoutes.delete("/employee", protectRoute, deleteEmployees);
 // These routes are strictly protected by your existing Admin CRM authentication
 attendanceRoutes.post("/admin/update", protectRoute, adminUpdateAttendance);
 attendanceRoutes.get("/admin/report", protectRoute, getAdminAttendanceReport);
+attendanceRoutes.get("/admin/employee/:id",protectRoute, getEmployeeById);
 
 attendanceRoutes.get("/trend", protectRoute, getAttendanceTrend);
 attendanceRoutes.get("/overview", protectRoute, getAttendanceOverview);
