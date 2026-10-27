@@ -6,6 +6,7 @@ export const ALLOWED_ORIGINS = [
   "https://www.aiworksforce.com",
   "https://app.aiworksforce.com",
   "https://creatikai.com",
+  "https://orbitflow-dash.vercel.app"
 ];
 
 export const clientUrl = "https://app.aiworksforce.com";
